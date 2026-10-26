@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: motion</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 4;
+// Motion grafik: kinetik tipografi (kelimeler sırayla yandan gelir, hafif taşıp oturur) + dönen şekiller + çizilen çizgi + büyüyen çubuklar.
+window.ciz = (f) => {
+  const d = f % 120;
+  const kelime = ["HER", "ŞEY", "HAREKET", "EDER"];
+  const renk = ["#FFC83D", "#fff", "#FF5C8A", "#fff"];
+  const cubuk = [0, 1, 2, 3, 4].map((k) => { const b = cik((d - 20 - k * 5) / 18) * (40 + ((k * 37) % 70)); return `<rect x="${250 + k * 26}" y="${430 - b}" width="18" height="${b}" rx="4" fill="${k % 2 ? "#FFC83D" : "#fff"}"/>`; }).join("");
+  const yazi = kelime.map((k, i) => {
+    const e = geri((d - i * 6) / 12);
+    const sag = i % 2 === 1;
+    return `<div style="font-family:Unbounded;font-weight:900;font-size:${k.length > 5 ? 150 : 185}px;line-height:.95;letter-spacing:-.05em;color:${renk[i]};transform:translateX(${(1 - e) * (sag ? 1 : -1) * 1000}px);opacity:${c01(e * 3)}">${k}</div>`;
+  }).join("");
+  sahne.innerHTML = `<div style="position:absolute;inset:0;background:#5B21F5">
+  <svg width="${W}" height="${H}" viewBox="0 -95 400 711" style="position:absolute;inset:0">
+    <circle cx="310" cy="110" r="${70 + Math.sin(f / 8) * 12}" fill="#FF5C8A"/>
+    <circle cx="310" cy="110" r="${100 + Math.sin(f / 8 + 1) * 10}" fill="none" stroke="#FFC83D" stroke-width="6" stroke-dasharray="18 14" transform="rotate(${f * 3} 310 110)"/>
+    <rect x="40" y="60" width="70" height="70" rx="14" fill="#FFC83D" transform="rotate(${f * 4} 75 95)"/>
+    <path d="M30 520 C 100 450, 160 570, 230 500 S 360 470, 390 520" fill="none" stroke="#fff" stroke-width="7" stroke-linecap="round" stroke-dasharray="520" stroke-dashoffset="${520 - cik(d / 50) * 520}"/>
+    ${cubuk}
+  </svg>
+  <div style="position:absolute;left:90px;top:640px">${yazi}</div>
+</div>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

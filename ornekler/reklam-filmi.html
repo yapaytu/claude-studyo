@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: reklam-filmi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 5;
+// Sinematik ürün reklamı: karanlık stüdyo, cam şişe, gezen ışık süzmesi, toz zerreleri, su halkası, anamorfik parlama,
+// letterbox ve kamera bilgisi (REC, 50mm f/1.4), yavaş kamera itmesi.
+window.ciz = (f) => {
+  const itme = 1 + c01(f / 150) * 0.14;
+  const isik = ((f * 1.6) % 260) - 60;
+  const parla = Math.sin(f / 14) * 26;
+  const baslik = cik((f - 50) / 14);
+  const dalga = (f % 45) / 45;
+  const toz = Array.from({ length: 30 }, (_, k) => { const p = ((f * (0.4 + rnd(k) * 0.6) + rnd(k + 9) * 300) % 300) / 300; return `<circle cx="${40 + rnd(k + 3) * 320 + Math.sin(f / 20 + k) * 8}" cy="${560 - p * 600}" r="${0.8 + rnd(k + 5) * 1.8}" fill="#F4C46E" opacity="${Math.sin(p * Math.PI) * 0.9}"/>`; }).join("");
+  const tc = `${String(Math.floor(f / 30) % 60).padStart(2, "0")}:${String(f % 30).padStart(2, "0")}`;
+  sahne.innerHTML = `<div style="position:absolute;inset:0;background:radial-gradient(ellipse at 50% 46%,#3A2614 0%,#120C08 55%,#050404 100%)">
+  <svg width="${W}" height="${H}" viewBox="0 -95 400 711" style="position:absolute;inset:0">
+    <defs>
+      <linearGradient id="cam" x1="0" x2="1"><stop offset="0" stop-color="#5B3A12"/><stop offset=".35" stop-color="#D99A3A"/><stop offset=".55" stop-color="#F4C46E"/><stop offset="1" stop-color="#4A2C0C"/></linearGradient>
+      <linearGradient id="kap" x1="0" x2="1"><stop offset="0" stop-color="#6E5320"/><stop offset=".5" stop-color="#F8E3A0"/><stop offset="1" stop-color="#6E5320"/></linearGradient>
+      <linearGradient id="sup" x1="0" x2="1"><stop offset="0" stop-color="#fff" stop-opacity="0"/><stop offset=".5" stop-color="#fff" stop-opacity=".75"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>
+      <clipPath id="sise"><rect x="130" y="170" width="140" height="190" rx="26"/></clipPath>
+    </defs>
+    <g transform="translate(200 270) scale(${itme}) translate(-200 -270)">
+      <ellipse cx="200" cy="372" rx="${60 + dalga * 120}" ry="${(60 + dalga * 120) * 0.16}" fill="none" stroke="#F4C46E" stroke-width="2" opacity="${(1 - dalga) * 0.6}"/>
+      <ellipse cx="200" cy="372" rx="110" ry="16" fill="#000" opacity=".6"/>
+      <rect x="130" y="170" width="140" height="190" rx="26" fill="url(#cam)"/>
+      <g clip-path="url(#sise)">
+        <rect x="${150 + parla}" y="160" width="22" height="220" fill="#fff" opacity=".35"/>
+        <rect x="${238 + parla * 0.4}" y="160" width="8" height="220" fill="#fff" opacity=".25"/>
+        <rect x="${isik + 40}" y="140" width="60" height="260" fill="url(#sup)" transform="skewX(-18)"/>
+      </g>
+      <rect x="130" y="170" width="140" height="190" rx="26" fill="none" stroke="#F8E3A0" stroke-opacity=".5" stroke-width="2"/>
+      <rect x="174" y="138" width="52" height="34" rx="4" fill="url(#kap)"/>
+      <rect x="162" y="96" width="76" height="46" rx="10" fill="url(#kap)"/>
+      <text x="200" y="272" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="26" letter-spacing="6" fill="#1A1006">NOIR</text>
+      <line x1="172" x2="228" y1="284" y2="284" stroke="#1A1006" stroke-width="1.2"/>
+      ${toz}
+    </g>
+    <rect x="-50" y="${isik > 80 && isik < 160 ? 236 : -200}" width="500" height="3" fill="#FFD48A" opacity=".55"/>
+    <g opacity="${baslik}">
+      <text x="200" y="470" text-anchor="middle" font-family="Fraunces" font-weight="600" font-size="34" letter-spacing="${30 - 20 * baslik}" fill="#F8E3A0">NOIR</text>
+      <text x="200" y="494" text-anchor="middle" font-family="Fraunces" font-size="11" letter-spacing="5" fill="#F8E3A0" opacity=".8">EAU DE PARFUM</text>
+    </g>
+  </svg>
+  <div style="position:absolute;left:0;right:0;top:0;height:250px;background:#000"></div>
+  <div style="position:absolute;left:0;right:0;bottom:0;height:250px;background:#000"></div>
+  <div style="position:absolute;left:60px;top:280px;font:700 30px 'JetBrains Mono';color:#fff;opacity:.85;display:flex;gap:16px;align-items:center"><span style="width:22px;height:22px;border-radius:50%;background:#FF3B30;opacity:${f % 30 < 18 ? 1 : 0.2}"></span>REC 00:00:${tc}</div>
+  <div style="position:absolute;right:60px;top:280px;font:700 30px 'JetBrains Mono';color:#fff;opacity:.85">50mm · f/1.4</div>
+</div>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

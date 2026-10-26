@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Sahne</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+window.SURE = 6; // saniye
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+// f = kare numarası. Sadece f'e bakarak çiz; Math.random, Date ve setTimeout kullanma.
+window.ciz = (f) => {
+  sahne.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">
+    <circle cx="540" cy="${960 + Math.sin(f / 10) * 80}" r="120" fill="#FF4D2E"/>
+  </svg>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

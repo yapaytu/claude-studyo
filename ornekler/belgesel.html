@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: belgesel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 6;
+// Belgesel: gece dünyası (dönen kürede şehir ışıkları), film greni, kırmızı çizgi + bölüm başlığı, akan yıl sayacı, alt yazı.
+const SEHIR = Array.from({ length: 180 }, (_, i) => ({ lon: rnd(i * 3 + 1) * Math.PI * 2, lat: Math.asin(rnd(i * 5 + 2) * 1.5 - 0.6), b: 0.4 + rnd(i * 7) * 0.6 }));
+window.ciz = (f) => {
+  const don = f / 90;
+  const zoom = 1 + c01(f / 170) * 0.18;
+  const yil = Math.round(1950 + (2026 - 1950) * cik(f / 130));
+  const ust = cik((f - 4) / 14);
+  const alt = cik((f - 60) / 12);
+  const isik = SEHIR.map((c, k) => {
+    const x = Math.cos(c.lat) * Math.sin(c.lon + don), z = Math.cos(c.lat) * Math.cos(c.lon + don);
+    if (z < 0.05) return "";
+    const p = c.b * (0.6 + 0.4 * Math.sin(f / 8 + k)), y = -Math.sin(c.lat) * 140;
+    return `<circle cx="${x * 140}" cy="${y}" r="${3.2 * z}" fill="#FFB347" opacity="${p * z * 0.45}"/><circle cx="${x * 140}" cy="${y}" r="${1.2 * z}" fill="#FFE2A8" opacity="${p * z}"/>`;
+  }).join("");
+  sahne.innerHTML = `<div style="position:absolute;inset:0;background:#050608">
+  <svg width="${W}" height="${H}" viewBox="0 -95 400 711" style="position:absolute;inset:0">
+    <defs>
+      <radialGradient id="dun" cx=".38" cy=".32" r=".75"><stop offset="0" stop-color="#1C3550"/><stop offset=".7" stop-color="#0A1522"/><stop offset="1" stop-color="#04080E"/></radialGradient>
+      <radialGradient id="hale" cx=".5" cy=".5" r=".5"><stop offset=".82" stop-color="#4FA3FF" stop-opacity="0"/><stop offset=".9" stop-color="#4FA3FF" stop-opacity=".35"/><stop offset="1" stop-color="#4FA3FF" stop-opacity="0"/></radialGradient>
+      <filter id="gren"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="1" seed="${f % 7}"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .09 0"/></filter>
+    </defs>
+    <g transform="translate(200 270) scale(${zoom})"><circle r="150" fill="url(#hale)" transform="scale(1.12)"/><circle r="140" fill="url(#dun)"/>${isik}</g>
+    <rect x="0" y="-95" width="400" height="711" filter="url(#gren)"/>
+  </svg>
+  <div style="position:absolute;left:0;right:0;top:330px;text-align:center;opacity:${ust}">
+    <div style="display:inline-block;width:86px;height:9px;background:#E50914;margin-bottom:22px"></div>
+    <div style="font:700 32px 'JetBrains Mono';letter-spacing:.35em;color:#cfcfcf">BÖLÜM 1</div>
+    <div style="font:900 96px/1.05 Fraunces;color:#fff;margin-top:16px">İnsan ve Makine</div>
+  </div>
+  <div style="position:absolute;left:0;right:0;top:1330px;text-align:center;font:600 84px Fraunces;color:#FFB347">${yil}</div>
+  <div style="position:absolute;left:80px;right:80px;top:1500px;text-align:center;font:600 40px Unbounded;color:#fff;text-shadow:0 2px 6px #000;opacity:${alt}">Her şey tek bir soruyla başladı.</div>
+</div>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: 3d</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script type="module">
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 6;
+// 3D animasyon (Three.js): parlak "oyuncak" malzeme (clearcoat), yumuşak gökyüzü ışığı + gölge, zıplayan karakter (squash & stretch),
+// göz kırpma, yavaşça dönen kamera, zıplayan oyuncak toplar.
+const THREE = await import("https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js");
+sahne.style.background = "linear-gradient(180deg,#9FD8FF 0%,#DDF1FF 55%,#FFE9CF 100%)";
+const r = new THREE.WebGLRenderer({ antialias: true, alpha: true, preserveDrawingBuffer: true });
+r.setSize(W, H); r.setPixelRatio(1); r.shadowMap.enabled = true; r.shadowMap.type = THREE.PCFSoftShadowMap;
+r.outputColorSpace = THREE.SRGBColorSpace;
+sahne.appendChild(r.domElement);
+const s = new THREE.Scene();
+const kam = new THREE.PerspectiveCamera(40, W / H, 0.1, 100);
+s.add(new THREE.HemisphereLight(0xffffff, 0xffd9b8, 1.35));
+const gunes = new THREE.DirectionalLight(0xffffff, 2.4);
+gunes.position.set(4, 8, 6); gunes.castShadow = true; gunes.shadow.mapSize.set(2048, 2048);
+Object.assign(gunes.shadow.camera, { left: -5, right: 5, top: 5, bottom: -5 });
+s.add(gunes);
+const arka = new THREE.PointLight(0x7fc8ff, 18); arka.position.set(-3, 3, -3); s.add(arka);
+const parlak = (renk, ems = 0) => new THREE.MeshPhysicalMaterial({ color: renk, roughness: 0.32, clearcoat: 1, clearcoatRoughness: 0.18, emissive: renk, emissiveIntensity: ems });
+const yer = new THREE.Mesh(new THREE.CircleGeometry(6, 64), new THREE.MeshStandardMaterial({ color: 0xffe3bd, roughness: 0.9 }));
+yer.rotation.x = -Math.PI / 2; yer.receiveShadow = true; s.add(yer);
+// karakter: yuvarlak robot kafa
+const kafa = new THREE.Group(); s.add(kafa);
+const govde = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), parlak(0xff5a3c)); govde.scale.set(1.18, 0.98, 1); govde.castShadow = true; kafa.add(govde);
+const vizor = new THREE.Mesh(new THREE.SphereGeometry(1, 48, 48), new THREE.MeshPhysicalMaterial({ color: 0x17171f, roughness: 0.12, clearcoat: 1 }));
+vizor.position.set(0, 0.02, 0.62); vizor.scale.set(0.98, 0.6, 0.42); kafa.add(vizor);
+const gozler = [-0.34, 0.34].map((x) => { const g = new THREE.Mesh(new THREE.CapsuleGeometry(0.085, 0.16, 8, 16), new THREE.MeshStandardMaterial({ color: 0xffffff, emissive: 0xffffff, emissiveIntensity: 1.2 })); g.position.set(x, 0.06, 1.0); kafa.add(g); return g; });
+const anten = new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.42, 12), parlak(0x141418)); anten.position.y = 1.1; kafa.add(anten);
+const top = new THREE.Mesh(new THREE.SphereGeometry(0.15, 24, 24), parlak(0xffc83d, 0.6)); top.position.y = 1.36; kafa.add(top);
+const eller = [-1, 1].map((k) => { const e = new THREE.Mesh(new THREE.SphereGeometry(0.3, 32, 32), parlak(0xff5a3c)); e.castShadow = true; kafa.add(e); return e; });
+const toplar = [[-2.6, 0x1c9bf0, -1.2], [2.5, 0x14a06b, -0.8], [-1.7, 0xffc83d, 1.4], [1.9, 0xff5c8a, 1.2]].map(([x, c, z]) => { const m = new THREE.Mesh(new THREE.SphereGeometry(0.34, 32, 32), parlak(c)); m.position.set(x, 0.4, z); m.castShadow = true; s.add(m); return m; });
+const kup = new THREE.Mesh(new THREE.BoxGeometry(0.9, 0.9, 0.9), parlak(0x8b5cf6)); kup.position.set(2.9, 0.45, -2); kup.castShadow = true; s.add(kup);
+
+window.ciz = (f) => {
+  const zip = Math.abs(Math.sin(f / 9)), sq = 1 - (1 - zip) * 0.08;
+  kafa.position.y = 1.05 + zip * 0.42;
+  kafa.rotation.set(0, Math.sin(f / 30) * 0.35, Math.sin(f / 9) * 0.06);
+  kafa.scale.set(1 / Math.sqrt(sq), sq, 1 / Math.sqrt(sq));
+  gozler.forEach((g) => (g.scale.y = f % 70 < 3 ? 0.12 : 1));
+  top.material.emissiveIntensity = 0.5 + Math.abs(Math.sin(f / 6)) * 0.6;
+  eller.forEach((e, i) => e.position.set((i ? 1 : -1) * 1.55, -0.25 + Math.sin(f / 7 + i) * 0.15, 0.3));
+  toplar.forEach((m, k) => { const p = ((f + k * 23) % 60) / 60; m.position.y = 0.35 + Math.abs(Math.sin(p * Math.PI)) * 1.3; });
+  kup.rotation.y = f / 40;
+  const a = Math.sin(f / 45) * 0.55, rr = 10.5 - c01(f / 150) * 1.6;
+  kam.position.set(Math.sin(a) * rr, 2.4, Math.cos(a) * rr); kam.lookAt(0, 1.1, 0);
+  r.render(s, kam);
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

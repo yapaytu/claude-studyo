@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: maskot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script src="maskot-ses.js" onerror="0"></script>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 6;
+// Konuşan marka maskotu: tek parça yuvarlak karakter, göz kırpma, nefes, süzülen eller, kostüm değişimi.
+// Ağız: ses varsa araclar/genlik.py çıktısı (window.AGIZ) ile, yoksa örnek konuşma ritmiyle oynar.
+const KOSTUM = ["yok", "bere", "kep"];
+window.ciz = (f) => {
+  const INK = "#141418", ANA = "#3B82F6";
+  const agiz = window.AGIZ ? (window.AGIZ[f] || 0) : (f % 50 < 34 ? Math.abs(Math.sin(f * 0.9)) * 0.9 : 0);
+  const kirp = f % 84 < 3, nefes = Math.sin(f / 14) * 6, k = KOSTUM[Math.floor(f / 50) % KOSTUM.length];
+  const yazi = "Merhaba! Ben markanın maskotuyum.", n = Math.floor(c01((f - 8) / 40) * yazi.length);
+  const goz = (x) => kirp ? `<rect x="${x - 16}" y="-6" width="32" height="8" rx="4" fill="${INK}"/>` : `<ellipse cx="${x}" cy="0" rx="17" ry="24" fill="${INK}"/><circle cx="${x + 6}" cy="-8" r="6" fill="#fff"/>`;
+  const el = (s) => `<g transform="translate(${s * 210} ${150 + Math.sin(f / 10 + s) * 14}) rotate(${s * (15 + Math.sin(f / 6) * 10)})"><ellipse rx="44" ry="38" fill="${ANA}" stroke="${INK}" stroke-width="8"/></g>`;
+  const kostum = k === "bere" ? `<ellipse cx="-10" cy="-150" rx="150" ry="46" fill="${INK}"/><circle cx="-10" cy="-196" r="12" fill="${INK}"/>`
+    : k === "kep" ? `<path d="M-190 -160 L0 -230 L190 -160 L0 -100 Z" fill="${INK}"/><rect x="-80" y="-150" width="160" height="44" fill="${INK}"/><path d="M150 -165 v70" stroke="#FFC83D" stroke-width="7"/><circle cx="150" cy="-92" r="10" fill="#FFC83D"/>` : "";
+  sahne.innerHTML = `<div style="position:absolute;inset:0;background:radial-gradient(circle at 50% 55%,#DCEBFF 0%,#fff 70%)">
+  <div style="position:absolute;left:90px;right:90px;top:300px;padding:34px 44px;border-radius:40px;background:#fff;border:8px solid ${INK};box-shadow:12px 12px 0 ${INK};font:900 52px/1.2 Unbounded;color:${INK};min-height:150px">${yazi.slice(0, n)}<span style="opacity:${f % 16 < 8 ? 1 : 0}">|</span></div>
+  <svg width="${W}" height="${H}" viewBox="-540 -1100 1080 1920" style="position:absolute;inset:0">
+    <ellipse cx="0" cy="480" rx="${290 - nefes * 3}" ry="40" fill="#000" opacity=".12"/>
+    <g transform="translate(0 ${nefes * 2}) scale(1.45) rotate(${Math.sin(f / 18) * 3})">
+      ${el(-1)}${el(1)}
+      <path d="M-200 60 C-200 -160 200 -160 200 60 C200 230 120 280 0 280 C-120 280 -200 230 -200 60Z" fill="${ANA}" stroke="${INK}" stroke-width="10"/>
+      <path d="M-150 -40 C-120 -110 -40 -130 20 -122" stroke="#fff" stroke-width="16" stroke-linecap="round" fill="none" opacity=".35"/>
+      <g transform="translate(0 30)">${goz(-70)}${goz(70)}</g>
+      <ellipse cx="-120" cy="110" rx="26" ry="14" fill="#FF8FB1" opacity=".7"/><ellipse cx="120" cy="110" rx="26" ry="14" fill="#FF8FB1" opacity=".7"/>
+      ${agiz > 0.08 ? `<ellipse cx="0" cy="130" rx="${28 + agiz * 8}" ry="${8 + agiz * 30}" fill="${INK}"/><ellipse cx="0" cy="${140 + agiz * 14}" rx="${14 + agiz * 4}" ry="${4 + agiz * 8}" fill="#FF6B6B"/>` : `<path d="M-34 120 q34 30 68 0" stroke="${INK}" stroke-width="10" fill="none" stroke-linecap="round"/>`}
+      ${kostum}
+    </g>
+  </svg>
+  <div style="position:absolute;left:0;right:0;top:1460px;text-align:center"><span style="font:900 54px Unbounded;color:#fff;background:${ANA};padding:12px 40px 20px;border-radius:30px;border:7px solid ${INK}">SENİN MARKAN</span></div>
+</div>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

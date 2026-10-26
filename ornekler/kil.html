@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: kil</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 6;
+// Kil animasyon reklam: 15 fps stop-motion (her kare 2 kez), hamur dokusu SVG filtresiyle, her adımda hafif titreme.
+window.ciz = (f) => {
+  const q = Math.floor(f / 2);
+  const j = (k, g = 2.4) => (rnd(q * 13 + k) - 0.5) * g;
+  const zip = Math.abs(Math.sin(q * 0.26));
+  const yer = zip < 0.18;
+  const sq = yer ? 1 - (0.18 - zip) * 1.4 : 1 + zip * 0.06;
+  const goz = q % 22 === 0 ? 0.15 : 1;
+  const slogan = cik((f - 60) / 10);
+  const F = "url(#kil)";
+  const isin = Array.from({ length: 9 }, (_, i) => `<rect x="-9" y="-78" width="18" height="30" rx="9" fill="#FFB238" transform="rotate(${i * 40})" filter="${F}"/>`).join("");
+  const kabarcik = Array.from({ length: 6 }, (_, i) => { const p = ((q * 3 + i * 17) % 60) / 60; return `<circle cx="${130 + i * 28 + Math.sin(q * 0.5 + i) * 6}" cy="${330 - p * 230}" r="${7 + (i % 3) * 3}" fill="#FFF3B0" opacity="${1 - p}" filter="${F}"/>`; }).join("");
+  sahne.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 -95 400 711">
+  <defs>
+    <filter id="kil" x="-10%" y="-10%" width="120%" height="120%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.045" numOctaves="3" seed="${3 + (q % 3)}" result="n"/>
+      <feDiffuseLighting in="n" surfaceScale="2.6" lighting-color="#fff" result="l"><feDistantLight azimuth="235" elevation="56"/></feDiffuseLighting>
+      <feComposite in="SourceGraphic" in2="l" operator="arithmetic" k1="1.18" k2="0" k3="0" k4="0" result="c"/>
+      <feComposite in="c" in2="SourceAlpha" operator="in"/>
+    </filter>
+    <radialGradient id="par" cx="0.32" cy="0.28" r="0.8"><stop offset="0" stop-color="#fff" stop-opacity="0.55"/><stop offset="0.45" stop-color="#fff" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity="0.28"/></radialGradient>
+  </defs>
+  <rect x="-10" y="-110" width="420" height="500" fill="#F7C6A3" filter="${F}"/>
+  <path d="M-10 372 Q200 ${352 + j(1)} 410 372 L410 640 L-10 640 Z" fill="#E58E62" filter="${F}"/>
+  <g transform="translate(${318 + j(2)} ${92 + j(3)}) rotate(${q * 9})">${isin}<circle r="44" fill="#FFC83D" filter="${F}"/><circle r="44" fill="url(#par)"/></g>
+  <g transform="translate(${70 + (q % 60) * 0.8} ${120 + j(4)})">${[[0, 0, 30], [32, -10, 36], [66, 2, 28]].map(([x, y, r]) => `<circle cx="${x}" cy="${y}" r="${r}" fill="#fff" filter="${F}"/>`).join("")}</g>
+  ${kabarcik}
+  <ellipse cx="200" cy="392" rx="${66 * (1.25 - zip * 0.5)}" ry="12" fill="#7A3B22" opacity="${0.25 + (1 - zip) * 0.15}"/>
+  <g transform="translate(${200 + j(5)} ${300 - zip * 92 + j(6)}) scale(${1 / sq} ${sq}) rotate(${j(7, 6)})"><g transform="translate(-58 -110)">
+    <path d="M60 -26 q18 -26 40 -14 q-14 24 -40 14 z" fill="#4DB34A" filter="${F}"/>
+    <rect x="4" y="0" width="108" height="190" rx="34" fill="#FFD84D" filter="${F}"/>
+    <rect x="4" y="86" width="108" height="52" fill="#fff" filter="${F}"/>
+    <text x="58" y="121" text-anchor="middle" font-family="Unbounded" font-weight="900" font-size="22" fill="#E5352B" filter="${F}">LİMON</text>
+    <ellipse cx="38" cy="50" rx="10" ry="${13 * goz}" fill="#141418"/><ellipse cx="78" cy="50" rx="10" ry="${13 * goz}" fill="#141418"/>
+    <circle cx="41" cy="45" r="3.5" fill="#fff"/><circle cx="81" cy="45" r="3.5" fill="#fff"/>
+    <path d="M44 66 q14 ${yer ? 6 : 14} 28 0" stroke="#141418" stroke-width="5" fill="none" stroke-linecap="round"/>
+    <rect x="4" y="0" width="108" height="190" rx="34" fill="url(#par)"/>
+  </g></g>
+  <g opacity="${slogan}" transform="translate(200 ${500 - (1 - slogan) * 30}) scale(${0.6 + slogan * 0.4})">
+    <text x="0" y="0" text-anchor="middle" font-family="Unbounded" font-weight="900" font-size="44" fill="#1C35F5" filter="${F}" letter-spacing="-1">FERAH KAL.</text>
+  </g>
+</svg>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>

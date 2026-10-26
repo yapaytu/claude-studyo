@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Örnek: cizgi-film</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Unbounded:wght@600;900&family=Fraunces:opsz,wght@9..144,600;9..144,900&family=Fredoka:wght@600;700&family=JetBrains+Mono:wght@700&display=block" rel="stylesheet">
+<style>
+  html, body { margin: 0; height: 100%; background: #111; }
+  body { display: grid; place-items: center; overflow: hidden; }
+  #sahne { position: relative; width: 1080px; height: 1920px; overflow: hidden; background: #fff; transform-origin: center; }
+  body.kayit { display: block; background: #fff; }
+</style>
+</head>
+<body>
+<div id="sahne"></div>
+<script>
+// ---- sahne sözleşmesi (STUDYO.md) ----
+window.FPS = 30;
+const W = 1080, H = 1920;
+const sahne = document.getElementById("sahne");
+const c01 = (x) => Math.max(0, Math.min(1, x));
+const cik = (x) => 1 - Math.pow(1 - c01(x), 3);           // yumuşak duruş
+const geri = (x) => { const q = c01(x) - 1; return 1 + 2.7 * q * q * q + 1.7 * q * q; }; // hafif taşıp oturma
+const rnd = (n) => { const s = Math.sin(n * 127.1 + 311.7) * 43758.5453; return s - Math.floor(s); }; // tekrarlanabilir rastgele
+
+
+window.SURE = 5;
+// Çizgi film: kalın mürekkep konturlar, güneş yüzü, kayan bulutlar, iki kat paralaks tepe, koşan civciv (zıplama + bacak + kanat), konuşma balonu, bölüm kartı.
+window.ciz = (f) => {
+  const kay = f * 3.2, ad = Math.sin(f / 2.4), zip = Math.abs(Math.sin(f / 4.8)) * 14, balon = cik((f - 60) / 8);
+  const INK = "#141418";
+  const tepe = (y, a, renk, hiz) => { const o = (kay * hiz) % 400; let d = `M${-o} 640 L${-o} ${y}`; for (let x = 0; x <= 1200; x += 100) d += ` Q${-o + x + 50} ${y - a} ${-o + x + 100} ${y}`; return `<path d="${d} L${-o + 1200} 640 Z" fill="${renk}" stroke="${INK}" stroke-width="5"/>`; };
+  const isin = Array.from({ length: 10 }, (_, i) => `<rect x="-5" y="-66" width="10" height="20" rx="5" fill="#FFC83D" stroke="${INK}" stroke-width="3" transform="rotate(${i * 36})"/>`).join("");
+  const bulut = [0, 1].map((k) => { const x = (((k * 230 - kay * 0.3) % 560) + 560) % 560 - 80; return `<g transform="translate(${x} ${150 + k * 40})"><path d="M0 30 q0 -26 26 -24 q8 -22 34 -14 q26 -8 30 18 q22 4 14 20 z" fill="#fff" stroke="${INK}" stroke-width="4"/></g>`; }).join("");
+  sahne.innerHTML = `<svg width="${W}" height="${H}" viewBox="0 -95 400 711">
+  <rect x="0" y="-95" width="400" height="711" fill="#7FD3FF"/>
+  <g transform="translate(320 90) rotate(${f * 1.5})">${isin}</g>
+  <circle cx="320" cy="90" r="40" fill="#FFD84D" stroke="${INK}" stroke-width="5"/><circle cx="308" cy="84" r="4" fill="${INK}"/><circle cx="332" cy="84" r="4" fill="${INK}"/>
+  <path d="M306 100 q14 12 28 0" stroke="${INK}" stroke-width="4" fill="none" stroke-linecap="round"/>
+  ${bulut}${tepe(330, 50, "#7DD36B", 0.4)}${tepe(400, 34, "#4CB944", 1)}
+  <g transform="translate(180 ${352 - zip})">
+    <ellipse cx="0" cy="${zip + 50}" rx="${40 - zip}" ry="7" fill="#000" opacity=".18"/>
+    <path d="M-12 34 l${-10 + ad * 12} 18" stroke="#FF8A00" stroke-width="6" stroke-linecap="round"/><path d="M12 34 l${10 - ad * 12} 18" stroke="#FF8A00" stroke-width="6" stroke-linecap="round"/>
+    <circle r="46" fill="#FFE14D" stroke="${INK}" stroke-width="5"/>
+    <path d="M-40 0 q-26 ${-14 + ad * 16} -8 ${-30 + ad * 10}" fill="#FFD21F" stroke="${INK}" stroke-width="4"/>
+    <circle cx="14" cy="-12" r="9" fill="#fff" stroke="${INK}" stroke-width="3"/><circle cx="17" cy="-12" r="4.5" fill="${INK}"/>
+    <path d="M34 -4 l22 6 l-22 6 z" fill="#FF8A00" stroke="${INK}" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M-6 -44 q4 -16 12 -2 q6 -14 10 4" fill="#FFE14D" stroke="${INK}" stroke-width="4"/>
+  </g>
+  <g opacity="${balon}" transform="translate(270 250) scale(${0.5 + balon * 0.5})">
+    <path d="M-70 -34 h140 a16 16 0 0 1 16 16 v36 a16 16 0 0 1 -16 16 h-90 l-24 20 l4 -20 h-30 a16 16 0 0 1 -16 -16 v-36 a16 16 0 0 1 16 -16z" fill="#fff" stroke="${INK}" stroke-width="4"/>
+    <text x="0" y="8" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="26" fill="${INK}">Yaşasın!</text>
+  </g>
+  <g transform="translate(200 -10) rotate(${Math.sin(f / 10) * 2})">
+    <rect x="-150" y="-24" width="300" height="50" rx="25" fill="#FF5C8A" stroke="${INK}" stroke-width="5"/>
+    <text x="0" y="10" text-anchor="middle" font-family="Fredoka" font-weight="700" font-size="23" fill="#fff">Bölüm 3: Kayıp Bulut</text>
+  </g>
+</svg>`;
+};
+
+// ---- önizleme: tarayıcıda açınca döngüde oynar, kayıtta kaydet.mjs kareyi kendisi ister ----
+if (new URLSearchParams(location.search).has("kayit")) document.body.classList.add("kayit");
+else {
+  const sigdir = () => { sahne.style.transform = `scale(${Math.min(innerWidth / W, innerHeight / H)})`; };
+  addEventListener("resize", sigdir); sigdir();
+  const bas = performance.now();
+  const dongu = () => { window.ciz(Math.floor(((performance.now() - bas) / 1000) * FPS) % Math.round(SURE * FPS)); requestAnimationFrame(dongu); };
+  document.fonts.ready.then(() => requestAnimationFrame(dongu));
+}
+</script>
+</body>
+</html>
